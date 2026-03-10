@@ -11,11 +11,8 @@ locals {
   rg_name = var.resource_group.create ? azurerm_resource_group.this["this"].name : data.azurerm_resource_group.existing[0].name
   rg_loc  = var.resource_group.create ? azurerm_resource_group.this["this"].location : (try(var.resource_group.location, null) != null ? var.resource_group.location : data.azurerm_resource_group.existing[0].location)
 
-  # Redis name must be globally unique. Deterministic default, but override allowed via var.redis.name.
-  base_redis_name_raw = "redis-${local.prefix}-${try(var.redis.name_suffix, "001")}"
-  base_redis_name     = substr(replace(lower(local.base_redis_name_raw), "/[^0-9a-z-]/", ""), 0, 63)
-
-  redis_name = coalesce(try(var.redis.name, null), local.base_redis_name)
+  # Resource names: use var.name directly as the full name
+  redis_name = var.name
 
   private_enabled = try(var.private.enabled, false)
 
@@ -37,9 +34,9 @@ locals {
   pe_services_enabled = local.private_enabled ? {
     for k, enabled in try(var.private.endpoints, {}) :
     k => merge(local.pe_catalog[k], {
-      pe_name  = "pe-${k}-${local.redis_name}"
-      psc_name = "psc-${k}-${local.redis_name}"
-      nic_name = "nic-pe-${k}-${local.redis_name}"
+      pe_name  = "pe-${local.redis_name}-${k}"
+      psc_name = "psc-${local.redis_name}-${k}"
+      nic_name = "nic-${local.redis_name}-${k}"
     })
     if enabled && contains(keys(local.pe_catalog), k)
   } : {}
