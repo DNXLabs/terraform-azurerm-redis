@@ -47,6 +47,9 @@ variable "redis" {
 
     redis_version = optional(string, "6")
 
+    # Enterprise settings
+    clustering_policy    = optional(string) # OSSCluster | EnterpriseCluster
+
     # In azurerm v4.x this is a BLOCK (redis_configuration { ... })
     # We accept a map and map known keys into the block.
     redis_configuration = optional(map(any), {})

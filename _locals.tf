@@ -14,6 +14,8 @@ locals {
   # Resource names: use var.name directly as the full name
   redis_name = var.name
 
+  is_enterprise = lower(try(var.redis.family, "")) == "enterprise"
+
   private_enabled = try(var.private.enabled, false)
 
   dns_create_zone      = local.private_enabled && try(var.private.dns.create_zone, true)
@@ -25,7 +27,7 @@ locals {
   # Single-service catalog (keeps the same pattern as storage)
   pe_catalog = {
     redis = {
-      subresource = "redisCache"
+      subresource = local.is_enterprise ? "redisEnterprise" : "redisCache"
       zone_name   = "privatelink.redis.cache.windows.net"
       link_name   = "link-privatelink-redis-cache-windows-net"
     }

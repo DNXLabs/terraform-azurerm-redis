@@ -4,11 +4,11 @@ output "resource_group_name" {
 
 output "redis" {
   value = {
-    id       = azurerm_redis_cache.this.id
-    name     = azurerm_redis_cache.this.name
-    hostname = azurerm_redis_cache.this.hostname
-    port     = azurerm_redis_cache.this.port
-    ssl_port = azurerm_redis_cache.this.ssl_port
+    id       = local.is_enterprise ? try(azurerm_managed_redis.this[0].id, null) : try(azurerm_redis_cache.this[0].id, null)
+    name     = local.is_enterprise ? try(azurerm_managed_redis.this[0].name, null) : try(azurerm_redis_cache.this[0].name, null)
+    hostname = local.is_enterprise ? try(azurerm_managed_redis.this[0].hostname, null) : try(azurerm_redis_cache.this[0].hostname, null)
+    port     = local.is_enterprise ? try(azurerm_managed_redis.this[0].default_database[0].port, 10000) : try(azurerm_redis_cache.this[0].port, null)
+    ssl_port = local.is_enterprise ? try(azurerm_managed_redis.this[0].default_database[0].port, 10000) : try(azurerm_redis_cache.this[0].ssl_port, null)
 
     private_endpoints = {
       for k, pe in azurerm_private_endpoint.this :
@@ -27,12 +27,12 @@ output "redis" {
 }
 
 output "primary_access_key" {
-  value     = azurerm_redis_cache.this.primary_access_key
+  value     = local.is_enterprise ? try(azurerm_managed_redis.this[0].default_database[0].primary_access_key, null) : try(azurerm_redis_cache.this[0].primary_access_key, null)
   sensitive = true
 }
 
 output "secondary_access_key" {
-  value     = azurerm_redis_cache.this.secondary_access_key
+  value     = local.is_enterprise ? try(azurerm_managed_redis.this[0].default_database[0].secondary_access_key, null) : try(azurerm_redis_cache.this[0].secondary_access_key, null)
   sensitive = true
 }
   

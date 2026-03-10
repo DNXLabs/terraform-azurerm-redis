@@ -13,6 +13,8 @@ resource "azurerm_resource_group" "dns" {
 }
 
 resource "azurerm_redis_cache" "this" {
+  count = local.is_enterprise ? 0 : 1
+
   name                = local.redis_name
   location            = local.rg_loc
   resource_group_name = local.rg_name
@@ -49,6 +51,22 @@ resource "azurerm_redis_cache" "this" {
       rdb_backup_frequency            = lookup(redis_configuration.value, "rdb_backup_frequency", null)
       rdb_backup_max_snapshot_count   = lookup(redis_configuration.value, "rdb_backup_max_snapshot_count", null)
     }
+  }
+
+  tags = local.tags
+}
+
+resource "azurerm_managed_redis" "this" {
+  count = local.is_enterprise ? 1 : 0
+
+  name                = local.redis_name
+  resource_group_name = local.rg_name
+  location            = local.rg_loc
+
+  sku_name = var.redis.sku_name # e.g. Balanced_B0
+
+  default_database {
+    clustering_policy = try(var.redis.clustering_policy, "OSSCluster")
   }
 
   tags = local.tags
@@ -96,7 +114,7 @@ resource "azurerm_private_endpoint" "this" {
 
   private_service_connection {
     name                           = each.value.psc_name
-    private_connection_resource_id = azurerm_redis_cache.this.id
+    private_connection_resource_id = local.is_enterprise ? azurerm_managed_redis.this[0].id : azurerm_redis_cache.this[0].id
     is_manual_connection           = false
     subresource_names              = [each.value.subresource]
   }
@@ -111,7 +129,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
   for_each = local.diag_enabled ? { "this" = true } : {}
 
   name                           = "diag-${local.redis_name}"
-  target_resource_id             = azurerm_redis_cache.this.id
+  target_resource_id             = local.is_enterprise ? azurerm_managed_redis.this[0].id : azurerm_redis_cache.this[0].id
   log_analytics_workspace_id     = try(var.diagnostics.log_analytics_workspace_id, null)
   storage_account_id             = try(var.diagnostics.storage_account_id, null)
   eventhub_authorization_rule_id = try(var.diagnostics.eventhub_authorization_rule_id, null)
