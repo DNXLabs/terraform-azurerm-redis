@@ -33,7 +33,6 @@ variable "redis" {
   description = "Azure Cache for Redis configuration."
   type = object({
     name        = optional(string)
-    name_suffix = optional(string, "001")
 
     sku_name = optional(string, "Premium") # Basic | Standard | Premium
     family   = optional(string, "P")       # C for Basic/Standard, P for Premium
